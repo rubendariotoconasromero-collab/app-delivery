@@ -1,0 +1,2 @@
+#include "Generated.xcconfig"
+APP_INFO_SUFFIX = -Debug

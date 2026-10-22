@@ -1,0 +1,43 @@
+{
+  "name": "appdelivery",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Transporte de pasajeros y encomiendas en Santa Cruz de la Sierra",
+  "workspaces": [
+    "apps/api",
+    "apps/admin"
+  ],
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11 <12"
+  },
+  "packageManager": "npm@11.19.0",
+  "overrides": {
+    "vite": "8.3.5"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "dev:api": "npm run start:dev --workspace @appdelivery/api",
+    "dev:admin": "npm run start --workspace @appdelivery/admin",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format:check": "prettier --check apps/api/src apps/api/test apps/api/scripts apps/admin/src scripts package.json compose.yaml .github/workflows/ci.yml .prettierrc.json",
+    "format": "prettier --write apps/api/src apps/api/test apps/api/scripts apps/admin/src scripts package.json compose.yaml .github/workflows/ci.yml .prettierrc.json",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs --tail=100 --follow",
+    "infra:verify": "node scripts/verify-infra.mjs",
+    "infra:test:up": "docker compose --env-file .env.test --project-name appdelivery-test up -d --wait",
+    "infra:test:down": "docker compose --env-file .env.test --project-name appdelivery-test down",
+    "db:migrate": "npm run db:migrate --workspace @appdelivery/api",
+    "db:status": "npm run db:status --workspace @appdelivery/api",
+    "staff:create": "npm run staff:create --workspace @appdelivery/api --",
+    "api:openapi": "npm run openapi:export --workspace @appdelivery/api",
+    "smoke": "node scripts/smoke.mjs"
+  }
+}

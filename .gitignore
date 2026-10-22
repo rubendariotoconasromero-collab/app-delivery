@@ -1,0 +1,48 @@
+# Dependencias y herramientas locales
+node_modules/
+.cache/
+.tools/
+.angular/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.gradle/
+Pods/
+.symlinks/
+ephemeral/
+
+# Configuración y credenciales de cada equipo
+.env
+.env.*
+!.env.example
+!.env.*.example
+local.properties
+key.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+Generated.xcconfig
+flutter_export_environment.sh
+
+# Resultados de compilación y pruebas
+dist/
+build/
+coverage/
+*.tsbuildinfo
+*.log
+*.pid
+test-results/
+playwright-report/
+
+# Artefactos existentes ajenos al código
+output/
+tmp/
+
+# Editor y sistema
+.idea/
+.DS_Store
+Thumbs.db
+
+# Los lockfiles de npm y de las apps Flutter se conservan.

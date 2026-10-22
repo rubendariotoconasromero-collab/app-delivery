@@ -1,0 +1,121 @@
+<main class="page">
+  <p class="eyebrow">ADMINISTRACIÓN / ACCESO</p>
+  <h1>Usuarios y permisos</h1>
+  <p class="muted">
+    Los roles del personal requieren una sesión del panel con autenticación multifactor. Asignar un
+    rol no crea credenciales del personal.
+  </p>
+  <div class="toolbar">
+    <button type="button" (click)="load()" [disabled]="loading() || busy()">
+      Actualizar usuarios
+    </button>
+  </div>
+  @if (error()) {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="success-message" role="status">{{ success() }}</p>
+  }
+  @if (loading()) {
+    <p role="status">Cargando usuarios…</p>
+  }
+  @if (editing(); as user) {
+    <section class="card review-box">
+      <h2>Editar acceso · {{ user.displayName }}</h2>
+      <form (ngSubmit)="save()">
+        <fieldset [disabled]="busy()">
+          <legend>Roles efectivos</legend>
+          <div class="role-options">
+            @for (role of availableRoles; track role) {
+              <label class="check-label"
+                ><input
+                  type="checkbox"
+                  [checked]="selectedRoles.includes(role)"
+                  (change)="toggle(role, $any($event.target).checked)"
+                />{{ names[role] }}</label
+              >
+            }
+          </div>
+        </fieldset>
+        <label for="account-status">Estado de cuenta</label
+        ><select
+          id="account-status"
+          name="accountStatus"
+          [(ngModel)]="selectedStatus"
+          [disabled]="busy()"
+        >
+          <option value="active">Activa</option>
+          <option value="suspended">Suspendida</option>
+        </select>
+        <p class="muted">
+          Suspender bloquea el acceso. Los cambios de permisos se aplican inmediatamente.
+        </p>
+        <div class="actions">
+          <button class="primary" type="submit" [disabled]="busy() || !selectedRoles.length">
+            {{ busy() ? 'Guardando…' : 'Guardar permisos y estado' }}</button
+          ><button type="button" (click)="editing.set(null)" [disabled]="busy()">Cancelar</button>
+        </div>
+      </form>
+    </section>
+  }
+  @if (!loading()) {
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">
+          Cuentas de la plataforma
+        </caption>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Contacto</th>
+            <th>Roles</th>
+            <th>Estado</th>
+            <th>Acceso</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <strong>{{ user.displayName }}</strong
+                ><small>{{ user.id }}</small>
+              </td>
+              <td>{{ user.phone || user.email || 'Sin contacto' }}</td>
+              <td>{{ roleLabel(user) }}</td>
+              <td>
+                <span class="status-badge" [attr.data-status]="user.status">{{
+                  user.status === 'active' ? 'Activa' : 'Suspendida'
+                }}</span>
+              </td>
+              <td>
+                @if (identity.admin()) {
+                  <button type="button" (click)="edit(user)" [disabled]="busy()">
+                    Editar acceso
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5">
+                {{ error() ? 'No se pudo obtener el listado.' : 'No hay usuarios en esta página.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <div class="pagination">
+    <button type="button" (click)="page(-1)" [disabled]="loading() || busy() || offset() === 0">
+      Anterior</button
+    ><span>Página {{ offset() / 50 + 1 }} · Hasta 50 resultados</span
+    ><button
+      type="button"
+      (click)="page(1)"
+      [disabled]="loading() || busy() || users().length < 50"
+    >
+      Siguiente
+    </button>
+  </div>
+</main>

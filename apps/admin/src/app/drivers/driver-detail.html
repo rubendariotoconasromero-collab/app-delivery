@@ -1,0 +1,295 @@
+<main class="page">
+  <a class="back-link" routerLink="/conductores">← Conductores</a>
+  <p class="eyebrow">HABILITACIÓN / EXPEDIENTE</p>
+  <h1>Revisión del conductor y sus vehículos</h1>
+  @if (error()) {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="success-message" role="status">{{ success() }}</p>
+  }
+  @if (loading()) {
+    <p role="status">Consultando expediente…</p>
+  }
+  @if (detail(); as data) {
+    <section class="card" aria-labelledby="driver-title" [attr.aria-busy]="busy()">
+      <div class="card-heading">
+        <div>
+          <h2 id="driver-title">{{ data.driver.fullName || data.driver.displayName }}</h2>
+          <p class="muted">{{ data.driver.phone }} · Alias: {{ data.driver.displayName }}</p>
+        </div>
+        <button type="button" (click)="refresh()" [disabled]="loading() || busy()">
+          Actualizar expediente
+        </button>
+      </div>
+      <div class="facts">
+        <div>
+          <small>Revisión del conductor</small
+          ><span class="status-badge" [attr.data-status]="data.driver.reviewStatus">{{
+            names[data.driver.reviewStatus]
+          }}</span>
+        </div>
+        <div>
+          <small>Habilitación operativa</small
+          ><strong>{{ data.driver.eligible ? 'Habilitado' : 'No habilitado' }}</strong>
+        </div>
+        <div>
+          <small>Enviado a revisión</small
+          ><span>{{
+            data.driver.submittedAt
+              ? (data.driver.submittedAt | date: 'dd/MM/yyyy HH:mm' : '-0400')
+              : 'Aún no enviado'
+          }}</span>
+        </div>
+        <div>
+          <small>Última revisión</small
+          ><span>{{
+            data.driver.reviewedAt
+              ? (data.driver.reviewedAt | date: 'dd/MM/yyyy HH:mm' : '-0400')
+              : 'Sin revisión'
+          }}</span>
+        </div>
+      </div>
+      <p class="muted">
+        La habilitación exige cuenta activa, conductor y vehículo aprobados, documentos vigentes y
+        selección del vehículo activo por el conductor.
+      </p>
+      @if (data.driver.reviewReason) {
+        <p><strong>Motivo de la revisión:</strong> {{ data.driver.reviewReason }}</p>
+      }
+      @if (identity.admin()) {
+        <div class="actions">
+          @if (data.driver.reviewStatus === 'pending') {
+            <button
+              type="button"
+              class="primary"
+              (click)="
+                selectReview(
+                  'drivers',
+                  data.driver.id,
+                  'Conductor: ' + (data.driver.fullName || data.driver.displayName),
+                  'approve'
+                )
+              "
+              [disabled]="busy() || loading()"
+            >
+              Aprobar conductor
+            </button>
+            <button
+              type="button"
+              class="danger"
+              (click)="
+                selectReview(
+                  'drivers',
+                  data.driver.id,
+                  'Conductor: ' + (data.driver.fullName || data.driver.displayName),
+                  'reject'
+                )
+              "
+              [disabled]="busy() || loading()"
+            >
+              Rechazar conductor
+            </button>
+          }
+          @if (data.driver.reviewStatus === 'approved') {
+            <button
+              type="button"
+              class="danger"
+              (click)="
+                selectReview(
+                  'drivers',
+                  data.driver.id,
+                  'Conductor: ' + (data.driver.fullName || data.driver.displayName),
+                  'suspend'
+                )
+              "
+              [disabled]="busy() || loading()"
+            >
+              Suspender conductor
+            </button>
+          }
+        </div>
+      }
+    </section>
+    @if (target(); as reviewTarget) {
+      <section class="card review-box" aria-labelledby="review-title">
+        <h2 id="review-title">
+          {{ decisionNames[reviewTarget.decision] }} · {{ reviewTarget.label }}
+        </h2>
+        <p>
+          La decisión y el motivo quedarán registrados en la auditoría. El servidor comprobará los
+          requisitos antes de aprobar.
+        </p>
+        <form (ngSubmit)="review()">
+          <label for="review-reason">Motivo obligatorio</label
+          ><textarea
+            id="review-reason"
+            name="reason"
+            [(ngModel)]="reason"
+            required
+            minlength="3"
+            maxlength="1000"
+            rows="3"
+            [disabled]="busy()"
+          ></textarea>
+          <div class="actions">
+            <button type="submit" class="primary" [disabled]="busy() || reason.trim().length < 3">
+              {{ busy() ? 'Guardando…' : 'Confirmar decisión' }}</button
+            ><button type="button" (click)="target.set(null)" [disabled]="busy()">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    }
+    <section class="card" aria-labelledby="documents-title">
+      <h2 id="documents-title">Documentación privada</h2>
+      <p class="muted">
+        Los documentos se obtienen con la sesión del administrador. La vigencia y el reemplazo de
+        archivos son validados por el backend.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo y archivo</th>
+              <th>Corresponde a</th>
+              <th>Vencimiento</th>
+              <th>Acceso</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (document of data.documents; track document.id) {
+              <tr>
+                <td>
+                  {{ documentNames[document.kind] || document.kind
+                  }}<small>{{ document.originalName }} · {{ document.size }} bytes</small>
+                </td>
+                <td>{{ documentOwner(document.vehicleId) }}</td>
+                <td>{{ document.expiresOn || 'Sin vencimiento declarado' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    (click)="openDocument(document.id, document.originalName)"
+                    [disabled]="!!documentBusy()"
+                  >
+                    {{ documentBusy() === document.id ? 'Cargando…' : 'Preparar archivo' }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">No hay documentos registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (preview(); as file) {
+        <div class="document-ready" role="status">
+          <strong>{{ file.name }}</strong
+          ><a [href]="file.url" target="_blank" rel="noopener noreferrer">Abrir archivo</a
+          ><a [href]="file.url" [download]="file.name">Descargar</a
+          ><button type="button" (click)="closePreview()">Cerrar acceso temporal</button>
+        </div>
+      }
+    </section>
+    <section aria-labelledby="vehicles-title">
+      <h2 id="vehicles-title">Vehículos registrados</h2>
+      @for (vehicle of data.vehicles; track vehicle.id) {
+        <article class="card vehicle-card">
+          <div class="card-heading">
+            <h3>{{ vehicle.plate }} · {{ vehicle.make }} {{ vehicle.model }}</h3>
+            <span class="status-badge" [attr.data-status]="vehicle.reviewStatus">{{
+              names[vehicle.reviewStatus]
+            }}</span>
+          </div>
+          <p>
+            {{ vehicle.year }} · {{ vehicle.capacityPassengers }} pasajeros ·
+            {{ serviceNames(vehicle) }}
+          </p>
+          <p>
+            <strong>{{
+              vehicle.active ? 'Seleccionado como vehículo activo' : 'Sin selección activa'
+            }}</strong>
+          </p>
+          @if (vehicle.reviewReason) {
+            <p><strong>Motivo:</strong> {{ vehicle.reviewReason }}</p>
+          }
+          <p class="muted">Identificador para sus documentos: {{ vehicle.id }}</p>
+          @if (identity.admin()) {
+            <div class="actions">
+              @if (vehicle.reviewStatus === 'pending') {
+                <button
+                  type="button"
+                  class="primary"
+                  (click)="
+                    selectReview('vehicles', vehicle.id, 'Vehículo ' + vehicle.plate, 'approve')
+                  "
+                  [disabled]="busy() || loading()"
+                >
+                  Aprobar vehículo</button
+                ><button
+                  type="button"
+                  class="danger"
+                  (click)="
+                    selectReview('vehicles', vehicle.id, 'Vehículo ' + vehicle.plate, 'reject')
+                  "
+                  [disabled]="busy() || loading()"
+                >
+                  Rechazar vehículo
+                </button>
+              }
+              @if (vehicle.reviewStatus === 'approved') {
+                <button
+                  type="button"
+                  class="danger"
+                  (click)="
+                    selectReview('vehicles', vehicle.id, 'Vehículo ' + vehicle.plate, 'suspend')
+                  "
+                  [disabled]="busy() || loading()"
+                >
+                  Suspender vehículo
+                </button>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="empty">El conductor todavía no registró vehículos.</p>
+      }
+    </section>
+    <section class="card" aria-labelledby="audit-title">
+      <h2 id="audit-title">Historial de decisiones</h2>
+      <p class="muted">Horarios de Bolivia (UTC−4).</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción y recurso</th>
+              <th>Motivo</th>
+              <th>Responsable</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of data.audit; track entry.id) {
+              <tr>
+                <td>{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm' : '-0400' }}</td>
+                <td>
+                  {{ entry.action }}<small>{{ entry.targetType }} · {{ entry.targetId }}</small>
+                </td>
+                <td>{{ entry.reason }}</td>
+                <td>{{ entry.actorId }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">Sin decisiones registradas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else if (!loading() && !error()) {
+    <p>No se encontró el expediente solicitado.</p>
+  }
+</main>

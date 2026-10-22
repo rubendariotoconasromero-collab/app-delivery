@@ -1,0 +1,139 @@
+name: Application checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_USER: appdelivery
+          POSTGRES_PASSWORD: appdelivery_test
+          POSTGRES_DB: appdelivery_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U appdelivery -d appdelivery_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:8.4.7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://appdelivery:appdelivery_test@127.0.0.1:5432/appdelivery_test
+      REDIS_URL: redis://127.0.0.1:6379
+      API_PORT: 3000
+      API_BIND_HOST: 127.0.0.1
+      MARKET_COUNTRY: BO
+      MARKET_CITY: Santa Cruz de la Sierra
+      MARKET_CURRENCY: BOB
+      MARKET_CURRENCY_SYMBOL: Bs
+      MARKET_TIME_ZONE: America/La_Paz
+      CORS_ORIGINS: http://localhost:4200
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Apply migrations twice and verify real infrastructure
+        run: |
+          npm run db:migrate
+          npm run db:migrate
+          npm run db:status
+          npm run infra:verify
+      - name: Verify authentication and driver approval against PostgreSQL
+        env:
+          RUN_DB_INTEGRATION: 'true'
+        run: npm run test --workspace @appdelivery/api
+      - run: npm run api:openapi
+      - name: Check HTTP API with healthy dependencies
+        shell: bash
+        run: |
+          node apps/api/dist/main.js > "$RUNNER_TEMP/appdelivery-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --silent --fail http://127.0.0.1:3000/api/v1/health/live; then
+              break
+            fi
+            sleep 1
+          done
+          npm run smoke -- --require-ready
+
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [client, driver]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.7'
+          cache: true
+      - name: Check shared mobile package
+        working-directory: packages/mobile_core
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+      - name: Check application
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+          flutter build apk --debug
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [client, driver]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.7'
+          cache: true
+      - name: Compile unsigned iOS application
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://api.example.invalid/api/v1

@@ -1,0 +1,135 @@
+<main id="contenido" tabindex="-1">
+  <div class="eyebrow">PANEL ADMINISTRATIVO / INICIO</div>
+  <div class="page-heading">
+    <div>
+      <h1>Identidad y habilitación<br />para operar.</h1>
+      <p>Transporte de pasajeros y encomiendas en un mismo lugar.</p>
+    </div>
+    <span class="loop-badge">LOOP <strong>02</strong></span>
+  </div>
+
+  <section class="market-strip" aria-label="Alcance configurado del MVP">
+    <div>
+      <span>CIUDAD INICIAL</span><strong>Santa Cruz de la Sierra <small>BO</small></strong>
+    </div>
+    <div>
+      <span>MONEDA</span><strong>Bolivianos <small>BOB · Bs</small></strong>
+    </div>
+    <div><span>COBERTURA</span><strong>Urbana, puerta a puerta</strong></div>
+  </section>
+
+  <section id="conexion" class="connection panel" aria-labelledby="connection-title">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">ESTADO DEL ENTORNO</span>
+        <h2 id="connection-title">Conexión con la plataforma</h2>
+      </div>
+      <button type="button" (click)="platform.refresh()" [disabled]="platform.loading()">
+        <span aria-hidden="true">↻</span>
+        {{ platform.loading() ? 'Comprobando…' : 'Volver a comprobar' }}
+      </button>
+    </div>
+    <div
+      class="connection-state"
+      [class.healthy]="platform.connected()"
+      [attr.aria-busy]="platform.loading()"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="status-symbol" aria-hidden="true">{{
+        platform.loading() ? '…' : platform.connected() ? '✓' : '!'
+      }}</span>
+      <div>
+        <strong>{{
+          platform.loading()
+            ? 'Consultando el backend'
+            : platform.connected()
+              ? 'La plataforma está lista'
+              : 'La plataforma requiere atención'
+        }}</strong>
+        <p>
+          {{
+            platform.loading()
+              ? 'Se están verificando la API y sus dependencias.'
+              : platform.connected()
+                ? 'La API respondió y las tres dependencias están disponibles.'
+                : 'Revisa los resultados de conexión antes de continuar.'
+          }}
+        </p>
+      </div>
+    </div>
+    @if (platform.infoError()) {
+      <p class="error-message">
+        <strong>Información de la API:</strong> {{ platform.infoError() }}
+      </p>
+    }
+    @if (platform.readinessError()) {
+      <p class="error-message"><strong>Disponibilidad:</strong> {{ platform.readinessError() }}</p>
+    }
+    <ul class="dependencies" aria-label="Dependencias del backend">
+      @for (dependency of dependencies; track dependency.key) {
+        <li>
+          <div>
+            <strong>{{ dependency.name }}</strong
+            ><span>{{ dependency.detail }}</span>
+          </div>
+          <span
+            class="dependency-state"
+            [class.up]="platform.readiness()?.dependencies?.[dependency.key]?.status === 'up'"
+            >{{
+              platform.loading()
+                ? 'Comprobando'
+                : platform.readiness()?.dependencies?.[dependency.key]?.status === 'up'
+                  ? 'Disponible'
+                  : platform.readiness()?.dependencies?.[dependency.key]?.status === 'down'
+                    ? 'No disponible'
+                    : 'Sin verificar'
+            }}</span
+          >
+        </li>
+      }
+    </ul>
+    @if (platform.info(); as info) {
+      <div class="server-info">
+        <span>Respuesta del servidor</span><strong>{{ info.name }} · {{ info.environment }}</strong
+        ><span>{{ info.market.city }} · {{ info.market.currency }}</span
+        ><span>{{ info.market.timeZone }}</span>
+      </div>
+    }
+    @if (platform.checkedAt(); as checkedAt) {
+      <p class="last-check">
+        Última comprobación: {{ checkedAt | date: 'HH:mm:ss' : '-0400' }} · Bolivia
+      </p>
+    }
+  </section>
+
+  <section id="alcance" aria-labelledby="scope-title">
+    <div class="scope-heading">
+      <div>
+        <span class="eyebrow">ALCANCE DEL MVP</span>
+        <h2 id="scope-title">Dos servicios, una plataforma</h2>
+      </div>
+      <span>Definido en el loop 0</span>
+    </div>
+    <div class="service-grid">
+      <article class="service-card">
+        <span class="service-number">01 / PASAJEROS</span>
+        <div class="service-icon" aria-hidden="true">↗</div>
+        <h3>Viajes por la ciudad</h3>
+        <p>Solicitud, asignación de conductor y seguimiento de viajes urbanos.</p>
+        <span class="scope-tag">Planificado en próximos loops</span>
+      </article>
+      <article class="service-card">
+        <span class="service-number">02 / ENCOMIENDAS</span>
+        <div class="service-icon parcel" aria-hidden="true">◇</div>
+        <h3>Envíos puerta a puerta</h3>
+        <p>Recogida, traslado y entrega de paquetes con trazabilidad.</p>
+        <span class="scope-tag">Planificado en próximos loops</span>
+      </article>
+    </div>
+  </section>
+  <footer>
+    AppDelivery · Base de desarrollo
+    <span>Las funciones operativas se incorporarán en los siguientes loops.</span>
+  </footer>
+</main>

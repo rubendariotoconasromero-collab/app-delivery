@@ -1,0 +1,1475 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/otp/request": {
+      "post": {
+        "operationId": "AuthController_requestOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "purpose",
+                  "role"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "+59170000000"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "register",
+                      "login",
+                      "recover"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "client",
+                      "driver"
+                    ]
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "Required for registration"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challengeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "expiresIn": {
+                      "type": "integer",
+                      "example": 300
+                    },
+                    "retryAfter": {
+                      "type": "integer",
+                      "example": 60
+                    },
+                    "developmentCode": {
+                      "type": "string",
+                      "description": "Only explicit development delivery, never production"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request a phone OTP, explicitly bound to role and purpose; development only until SMS integration",
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/verify": {
+      "post": {
+        "operationId": "AuthController_verifyOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "challengeId",
+                  "code"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "challengeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "user": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "displayName",
+                        "phone",
+                        "email",
+                        "roles",
+                        "status"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "client",
+                              "driver",
+                              "operator",
+                              "finance",
+                              "admin"
+                            ]
+                          }
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "suspended"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "displayName",
+                        "phone",
+                        "email",
+                        "roles",
+                        "status"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "client",
+                              "driver",
+                              "operator",
+                              "finance",
+                              "admin"
+                            ]
+                          }
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "suspended"
+                          ]
+                        }
+                      }
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "csrfToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke the current session; cookie sessions require X-CSRF-Token",
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/login": {
+      "post": {
+        "operationId": "AuthController_adminLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "totp"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "totp": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "displayName",
+                        "phone",
+                        "email",
+                        "roles",
+                        "status"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "client",
+                              "driver",
+                              "operator",
+                              "finance",
+                              "admin"
+                            ]
+                          }
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "suspended"
+                          ]
+                        }
+                      }
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "csrfToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminUsersController_list",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "displayName",
+                          "phone",
+                          "email",
+                          "roles",
+                          "status"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "email": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "client",
+                                "driver",
+                                "operator",
+                                "finance",
+                                "admin"
+                              ]
+                            }
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "suspended"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "User administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "patch": {
+        "operationId": "AdminUsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "roles": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "client",
+                        "driver",
+                        "operator",
+                        "finance",
+                        "admin"
+                      ]
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "displayName",
+                    "phone",
+                    "email",
+                    "roles",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "email": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "client",
+                          "driver",
+                          "operator",
+                          "finance",
+                          "admin"
+                        ]
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "suspended"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Change roles/status with immediate permission effects; requires CSRF, preserves last administrator",
+        "tags": [
+          "User administration"
+        ]
+      }
+    },
+    "/api/v1/drivers/me": {
+      "get": {
+        "operationId": "DriversController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      },
+      "put": {
+        "operationId": "DriversController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "fullName"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 150
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/submit": {
+      "post": {
+        "operationId": "DriversController_submit",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/documents": {
+      "post": {
+        "operationId": "DriversController_document",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "file"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "identity_document",
+                      "driver_license"
+                    ]
+                  },
+                  "expiresOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles": {
+      "post": {
+        "operationId": "DriversController_createVehicle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "plate",
+                  "make",
+                  "model",
+                  "year",
+                  "capacityPassengers",
+                  "serviceTypes"
+                ],
+                "properties": {
+                  "plate": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 15,
+                    "description": "Matrícula; se normaliza a mayúsculas."
+                  },
+                  "make": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "model": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "year": {
+                    "type": "integer",
+                    "minimum": 1900,
+                    "maximum": 2027
+                  },
+                  "capacityPassengers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "serviceTypes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "passengers",
+                        "parcels"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles/{id}": {
+      "put": {
+        "operationId": "DriversController_editVehicle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "plate",
+                  "make",
+                  "model",
+                  "year",
+                  "capacityPassengers",
+                  "serviceTypes"
+                ],
+                "properties": {
+                  "plate": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 15,
+                    "description": "Matrícula; se normaliza a mayúsculas."
+                  },
+                  "make": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "model": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "year": {
+                    "type": "integer",
+                    "minimum": 1900,
+                    "maximum": 2027
+                  },
+                  "capacityPassengers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "serviceTypes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "passengers",
+                        "parcels"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles/{id}/submit": {
+      "post": {
+        "operationId": "DriversController_submitVehicle",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles/{id}/activate": {
+      "post": {
+        "operationId": "DriversController_activateVehicle",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles/{id}/documents": {
+      "post": {
+        "operationId": "DriversController_vehicleDocument",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "expiresOn",
+                  "file"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "vehicle_registration"
+                    ]
+                  },
+                  "expiresOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Driver onboarding"
+        ]
+      }
+    },
+    "/api/v1/admin/drivers": {
+      "get": {
+        "operationId": "DriverReviewController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Driver review"
+        ]
+      }
+    },
+    "/api/v1/admin/drivers/{id}": {
+      "get": {
+        "operationId": "DriverReviewController_detail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Driver review"
+        ]
+      }
+    },
+    "/api/v1/admin/drivers/{id}/review": {
+      "post": {
+        "operationId": "DriverReviewController_reviewDriver",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "decision",
+                  "reason"
+                ],
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "suspend"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Driver review"
+        ]
+      }
+    },
+    "/api/v1/admin/vehicles/{id}/review": {
+      "post": {
+        "operationId": "DriverReviewController_reviewVehicle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "decision",
+                  "reason"
+                ],
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "suspend"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Driver review"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}": {
+      "get": {
+        "operationId": "DriverDocumentsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Private documents"
+        ]
+      }
+    },
+    "/api/v1/info": {
+      "get": {
+        "operationId": "InfoController_getInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "environment",
+                    "market",
+                    "services"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "AppDelivery"
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "development",
+                        "test",
+                        "production"
+                      ]
+                    },
+                    "market": {
+                      "type": "object",
+                      "required": [
+                        "country",
+                        "city",
+                        "currency",
+                        "currencySymbol",
+                        "timeZone"
+                      ],
+                      "properties": {
+                        "country": {
+                          "type": "string",
+                          "example": "BO"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "Santa Cruz de la Sierra"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "example": "BOB"
+                        },
+                        "currencySymbol": {
+                          "type": "string",
+                          "example": "Bs"
+                        },
+                        "timeZone": {
+                          "type": "string",
+                          "example": "America/La_Paz"
+                        }
+                      }
+                    },
+                    "services": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "passengers",
+                          "parcels"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Public platform metadata and initial market",
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/api/v1/health/live": {
+      "get": {
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "service"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "service": {
+                      "type": "string",
+                      "enum": [
+                        "api"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Process liveness; no database or Redis connection is required",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "dependencies"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "dependencies": {
+                      "type": "object",
+                      "required": [
+                        "postgres",
+                        "postgis",
+                        "redis"
+                      ],
+                      "properties": {
+                        "postgres": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        },
+                        "postgis": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        },
+                        "redis": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "dependencies"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "dependencies": {
+                      "type": "object",
+                      "required": [
+                        "postgres",
+                        "postgis",
+                        "redis"
+                      ],
+                      "properties": {
+                        "postgres": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        },
+                        "postgis": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        },
+                        "redis": {
+                          "type": "object",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "up",
+                                "down"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bounded checks for PostgreSQL, PostGIS extension and Redis",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "AppDelivery API",
+    "description": "Loop 2: phone identity, staff MFA sessions, permissions and driver onboarding.",
+    "version": "0.2.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Opaque mobile session token"
+      },
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "appdelivery_admin"
+      }
+    },
+    "schemas": {}
+  }
+}
