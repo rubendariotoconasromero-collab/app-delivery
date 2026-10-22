@@ -18,6 +18,7 @@ scripts/               Preparación y verificación local
 docs/loop-0/           Alcance funcional, estados y backlog del MVP
 docs/loop-1/           Guía y estado de verificación de esta entrega
 docs/loop-2/           Cuentas, permisos, alta y aprobación de conductores y vehículos
+docs/loop-3/           Primer viaje de pasajeros, asignación manual y efectivo
 compose.yaml          PostgreSQL/PostGIS y Redis para desarrollo
 ```
 
@@ -67,7 +68,7 @@ npm run dev:admin
 | `http://localhost:3000/api/v1/health/ready` | Estado de PostgreSQL, PostGIS y Redis. |
 | `http://localhost:3000/api/docs` | Documentación de la API. |
 
-La API puede iniciar para diagnóstico sin PostgreSQL o Redis. En ese caso `info` y `live` responden y `ready` devuelve 503. El registro, las sesiones y las aprobaciones requieren PostgreSQL real. Para crear el primer administrador y configurar su TOTP, sigue la [guía del loop 2](docs/loop-2/README.md).
+La API puede iniciar para diagnóstico sin PostgreSQL o Redis. En ese caso `info` y `live` responden y `ready` devuelve 503. El registro, las sesiones, las aprobaciones y los viajes requieren PostgreSQL real. Para crear el primer administrador y configurar su TOTP, sigue la [guía del loop 2](docs/loop-2/README.md). El [loop 3](docs/loop-3/README.md) conecta el primer viaje de pasajeros con asignación manual desde `/viajes`, rutas OSRM y declaración del efectivo.
 
 ## Apps Flutter
 
@@ -123,7 +124,7 @@ En `packages/mobile_core`, `apps/client` y `apps/driver` ejecuta `flutter analyz
 
 El flujo [CI](.github/workflows/ci.yml) prepara comprobaciones de API/panel, migraciones repetibles, infraestructura real y builds Android/iOS. Su ejecución requiere alojar este código en GitHub y habilitar Actions; la presencia del archivo no significa que esos trabajos ya hayan pasado.
 
-El alcance del producto está en [loop 0](docs/loop-0/README.md). La infraestructura inicial se documenta en [loop 1](docs/loop-1/README.md) y la entrega actual de identidad y habilitación en [loop 2](docs/loop-2/README.md).
+El alcance del producto está en [loop 0](docs/loop-0/README.md). La infraestructura inicial se documenta en [loop 1](docs/loop-1/README.md), la identidad y habilitación en [loop 2](docs/loop-2/README.md) y la entrega actual del primer viaje en [loop 3](docs/loop-3/README.md).
 
 ## Control de versiones
 

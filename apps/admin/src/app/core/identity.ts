@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { clearPendingTripActions } from './pending-trip-actions';
 
 export type Role = 'client' | 'driver' | 'operator' | 'finance' | 'admin';
 export interface User {
@@ -46,6 +47,7 @@ export class Identity {
     () => this.hasRole('operator', 'finance', 'admin') && !!this.session()?.csrfToken,
   );
   readonly admin = computed(() => this.staff() && this.hasRole('admin'));
+  readonly operations = computed(() => this.staff() && this.hasRole('admin', 'operator'));
   private restoring?: Observable<Session | null>;
 
   hasRole(...roles: Role[]): boolean {
@@ -110,6 +112,7 @@ export class Identity {
   }
 
   clear(): void {
+    clearPendingTripActions();
     this.session.set(null);
     this.restored.set(true);
   }

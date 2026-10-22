@@ -2,10 +2,10 @@
   <div class="eyebrow">PANEL ADMINISTRATIVO / INICIO</div>
   <div class="page-heading">
     <div>
-      <h1>Identidad y habilitación<br />para operar.</h1>
+      <h1>Movilidad urbana,<br />operación en un solo lugar.</h1>
       <p>Transporte de pasajeros y encomiendas en un mismo lugar.</p>
     </div>
-    <span class="loop-badge">LOOP <strong>02</strong></span>
+    <span class="loop-badge">LOOP <strong>03</strong></span>
   </div>
 
   <section class="market-strip" aria-label="Alcance configurado del MVP">
@@ -116,8 +116,12 @@
         <span class="service-number">01 / PASAJEROS</span>
         <div class="service-icon" aria-hidden="true">↗</div>
         <h3>Viajes por la ciudad</h3>
-        <p>Solicitud, asignación de conductor y seguimiento de viajes urbanos.</p>
-        <span class="scope-tag">Planificado en próximos loops</span>
+        <p>Solicitudes con cotización en Bs, asignación manual y registro de efectivo.</p>
+        @if (identity.operations()) {
+          <a class="record-link" routerLink="/viajes">Abrir operación de viajes →</a>
+        } @else {
+          <span class="scope-tag">Disponible para operaciones y administración</span>
+        }
       </article>
       <article class="service-card">
         <span class="service-number">02 / ENCOMIENDAS</span>
@@ -130,6 +134,6 @@
   </section>
   <footer>
     AppDelivery · Base de desarrollo
-    <span>Las funciones operativas se incorporarán en los siguientes loops.</span>
+    <span>Viajes de pasajeros disponibles con asignación manual.</span>
   </footer>
 </main>

@@ -32,3 +32,12 @@ export const adminGuard: CanActivateFn = () => {
     catchError(() => of(router.createUrlTree(['/login'], { queryParams: { unavailable: '1' } }))),
   );
 };
+
+export const operationsGuard: CanActivateFn = () => {
+  const identity = inject(Identity);
+  const router = inject(Router);
+  return identity.restore().pipe(
+    map(() => (identity.operations() ? true : router.createUrlTree(['/sin-permiso']))),
+    catchError(() => of(router.createUrlTree(['/login'], { queryParams: { unavailable: '1' } }))),
+  );
+};

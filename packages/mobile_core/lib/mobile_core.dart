@@ -7,3 +7,5 @@ export 'src/models.dart';
 export 'src/auth_models.dart';
 export 'src/session_store.dart';
 export 'src/session_controller.dart';
+export 'src/trip_api.dart';
+export 'src/trip_location.dart';

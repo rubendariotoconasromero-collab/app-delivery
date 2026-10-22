@@ -1155,6 +1155,762 @@
         ]
       }
     },
+    "/api/v1/trips/config": {
+      "get": {
+        "operationId": "TripsController_config",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/quotes": {
+      "post": {
+        "operationId": "TripsController_quote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "origin",
+                  "destination",
+                  "passengerCount"
+                ],
+                "properties": {
+                  "origin": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "latitude",
+                      "longitude",
+                      "address"
+                    ],
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "address": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 200
+                      },
+                      "reference": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "latitude",
+                      "longitude",
+                      "address"
+                    ],
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "address": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 200
+                      },
+                      "reference": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    }
+                  },
+                  "passengerCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips": {
+      "post": {
+        "operationId": "TripsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "quoteId",
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quoteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      },
+      "get": {
+        "operationId": "TripsController_history",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/active": {
+      "get": {
+        "operationId": "TripsController_active",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}": {
+      "get": {
+        "operationId": "TripsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/start-code": {
+      "post": {
+        "operationId": "TripsController_renew",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/cancel": {
+      "post": {
+        "operationId": "TripsController_cancel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey",
+                  "reason"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/arrive": {
+      "post": {
+        "operationId": "TripsController_arrive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/start": {
+      "post": {
+        "operationId": "TripsController_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey",
+                  "pin"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "pin": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/finish": {
+      "post": {
+        "operationId": "TripsController_finish",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/cash": {
+      "post": {
+        "operationId": "TripsController_cash",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "idempotencyKey",
+                  "receivedCents"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "receivedCents": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Declarar efectivo recibido; la conciliación permanece pendiente.",
+        "tags": [
+          "Passenger trips"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/availability": {
+      "get": {
+        "operationId": "TripDriverController_availability",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger driver availability"
+        ]
+      },
+      "put": {
+        "operationId": "TripDriverController_setAvailability",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "online"
+                ],
+                "properties": {
+                  "online": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger driver availability"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/location": {
+      "post": {
+        "operationId": "TripDriverController_location",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "latitude",
+                  "longitude",
+                  "accuracyMeters",
+                  "capturedAt"
+                ],
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "accuracyMeters": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "capturedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger driver availability"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/trip-offers": {
+      "get": {
+        "operationId": "TripDriverController_offers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger driver availability"
+        ]
+      }
+    },
+    "/api/v1/drivers/me/trip-offers/{id}/respond": {
+      "post": {
+        "operationId": "TripDriverController_respond",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "decision",
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "reject"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Passenger driver availability"
+        ]
+      }
+    },
+    "/api/v1/admin/trips": {
+      "get": {
+        "operationId": "TripAdminController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Passenger trip operations"
+        ]
+      }
+    },
+    "/api/v1/admin/trips/{id}": {
+      "get": {
+        "operationId": "TripAdminController_detail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Passenger trip operations"
+        ]
+      }
+    },
+    "/api/v1/admin/trips/{id}/candidates": {
+      "get": {
+        "operationId": "TripAdminController_candidates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Passenger trip operations"
+        ]
+      }
+    },
+    "/api/v1/admin/trips/{id}/assign": {
+      "post": {
+        "operationId": "TripAdminController_assign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "driverId",
+                  "reason",
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "driverId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Passenger trip operations"
+        ]
+      }
+    },
     "/api/v1/info": {
       "get": {
         "operationId": "InfoController_getInfo",
@@ -1450,8 +2206,8 @@
   },
   "info": {
     "title": "AppDelivery API",
-    "description": "Loop 2: phone identity, staff MFA sessions, permissions and driver onboarding.",
-    "version": "0.2.0",
+    "description": "Loop 3: passenger quotes, manual dispatch, verified journey milestones and cash declarations.",
+    "version": "0.3.0",
     "contact": {}
   },
   "tags": [],

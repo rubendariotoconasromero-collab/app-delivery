@@ -8,6 +8,9 @@ import 'auth_models.dart';
 import 'driver_onboarding.dart';
 import 'session_controller.dart';
 import 'session_store.dart';
+import 'passenger_trips.dart';
+import 'driver_trips.dart';
+import 'trip_api.dart';
 
 class AuthHome extends StatefulWidget {
   const AuthHome({
@@ -66,6 +69,17 @@ class _AuthHomeState extends State<AuthHome> {
       logoutError = null;
     });
     try {
+      if (widget.role == 'driver') {
+        try {
+          await api.sendJson(
+            'PUT',
+            'drivers/me/availability',
+            data: {'online': false},
+          );
+        } catch (_) {
+          /* Logout still revokes the credential if availability failed. */
+        }
+      }
       await session.logout();
     } catch (error) {
       logoutError = userMessage(error);
@@ -115,31 +129,33 @@ class _AuthHomeState extends State<AuthHome> {
                       Text(session.user!.phone ?? ''),
                       if (logoutError != null) ErrorNotice(logoutError!),
                       const SizedBox(height: 20),
-                      if (widget.role == 'driver')
-                        DriverOnboarding(api: api)
-                      else ...[
-                        const Text(
-                          'Santa Cruz de la Sierra · Bolivianos · Efectivo',
-                        ),
-                        const Card(
-                          child: ListTile(
-                            leading: Icon(Icons.people_outline),
-                            title: Text('Pasajeros'),
-                            subtitle: Text(
-                              'Las solicitudes de viaje estarán disponibles en el siguiente loop.',
-                            ),
+                      if (widget.role == 'driver') ...[
+                        DriverTrips(
+                          key: ValueKey('driver.${session.user!.id}'),
+                          api: api,
+                          journal: SecureTripJournal(
+                            '${api.config.baseUrl.host}.${api.config.baseUrl.port}.driver.${session.user!.id}',
                           ),
+                          accountActive:
+                              session.user!.status == 'active' &&
+                              !session.restricted,
                         ),
-                        const Card(
-                          child: ListTile(
-                            leading: Icon(Icons.inventory_2_outlined),
-                            title: Text('Encomiendas'),
-                            subtitle: Text(
-                              'El envío puerta a puerta se incorporará en los siguientes loops.',
-                            ),
+                        const SizedBox(height: 24),
+                        ExpansionTile(
+                          title: const Text('Perfil, documentos y vehículos'),
+                          children: [DriverOnboarding(api: api)],
+                        ),
+                      ] else
+                        PassengerTrips(
+                          key: ValueKey('client.${session.user!.id}'),
+                          api: api,
+                          journal: SecureTripJournal(
+                            '${api.config.baseUrl.host}.${api.config.baseUrl.port}.client.${session.user!.id}',
                           ),
+                          accountActive:
+                              session.user!.status == 'active' &&
+                              !session.restricted,
                         ),
-                      ],
                     ],
                   ),
                 ),

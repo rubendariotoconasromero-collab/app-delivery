@@ -132,16 +132,16 @@ class _BootstrapPageState extends State<BootstrapPage> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Base de desarrollo · Loop 1',
+                    'Diagnóstico de desarrollo · Loop 3',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     isClient
-                        ? 'La cuenta, las solicitudes y el seguimiento se '
-                              'incorporarán en los próximos loops.'
-                        : 'El registro, la habilitación y las ofertas de '
-                              'servicio se incorporarán en los próximos loops.',
+                        ? 'Inicia sesión para cotizar y solicitar un viaje de pasajeros. '
+                              'El seguimiento en segundo plano llegará en el siguiente loop.'
+                        : 'Inicia sesión para completar tu habilitación y atender '
+                              'las asignaciones de pasajeros del equipo operativo.',
                   ),
                   const SizedBox(height: 24),
                   FutureBuilder<ConnectionSnapshot>(

@@ -88,6 +88,18 @@ export class DriverService {
     );
   }
 
+  private async requireIdle(client: PoolClient, driverId: string) {
+    const busy = await client.query(
+      `SELECT 1 FROM passenger_trips WHERE driver_id=$1 AND state IN ('assigned','arrived','in_progress')
+      UNION ALL SELECT 1 FROM passenger_trip_offers WHERE driver_id=$1 AND state='pending' AND expires_at>NOW() LIMIT 1`,
+      [driverId],
+    );
+    if (busy.rowCount)
+      throw new ConflictException(
+        'Finaliza el viaje o resuelve la propuesta pendiente antes de modificar tu habilitación o vehículo.',
+      );
+  }
+
   private document(row: Row) {
     return {
       id: String(row.id),
@@ -200,6 +212,7 @@ export class DriverService {
   async saveProfile(actor: AuthenticatedUser, body: unknown) {
     const input = parseInput(fullNameInput, body);
     await this.withDriver(actor.id, async (client) => {
+      await this.requireIdle(client, actor.id);
       await client.query(
         "UPDATE driver_profiles SET full_name=$2,review_status='draft',review_reason=NULL,reviewed_at=NULL,reviewed_by=NULL,active_vehicle_id=NULL,updated_at=NOW() WHERE user_id=$1",
         [actor.id, input.fullName],
@@ -220,6 +233,7 @@ export class DriverService {
   async createVehicle(actor: AuthenticatedUser, body: unknown) {
     const input = parseInput(vehicleInput, body);
     const row = await this.withDriver(actor.id, async (client) => {
+      await this.requireIdle(client, actor.id);
       const count = await client.query(
         'SELECT COUNT(*)::int AS total FROM driver_vehicles WHERE driver_id=$1',
         [actor.id],
@@ -270,6 +284,7 @@ export class DriverService {
   async updateVehicle(actor: AuthenticatedUser, vehicleId: string, body: unknown) {
     const input = parseInput(vehicleInput, body);
     const row = await this.withDriver(actor.id, async (client) => {
+      await this.requireIdle(client, actor.id);
       await this.ownedVehicle(client, actor.id, vehicleId);
       const result = await client.query(
         "UPDATE driver_vehicles SET plate=$3,make=$4,model=$5,year=$6,capacity_passengers=$7,service_types=$8,review_status='draft',review_reason=NULL,reviewed_at=NULL,reviewed_by=NULL,updated_at=NOW() WHERE id=$1 AND driver_id=$2 RETURNING *",
@@ -328,6 +343,7 @@ export class DriverService {
     let committed = false;
     try {
       const row = await this.withDriver(actor.id, async (client) => {
+        await this.requireIdle(client, actor.id);
         if (vehicleId) await this.ownedVehicle(client, actor.id, vehicleId);
         const quota = (
           await client.query(
@@ -434,6 +450,7 @@ export class DriverService {
 
   async submit(actor: AuthenticatedUser, vehicleId?: string) {
     await this.withDriver(actor.id, async (client) => {
+      await this.requireIdle(client, actor.id);
       if (vehicleId) {
         const vehicle = await this.ownedVehicle(client, actor.id, vehicleId);
         if (!['draft', 'rejected', 'suspended'].includes(String(vehicle.review_status)))
@@ -476,6 +493,7 @@ export class DriverService {
 
   async activate(actor: AuthenticatedUser, vehicleId: string) {
     await this.withDriver(actor.id, async (client) => {
+      await this.requireIdle(client, actor.id);
       const profile = (
         await client.query(
           'SELECT p.review_status,u.status FROM driver_profiles p JOIN app_users u ON u.id=p.user_id WHERE p.user_id=$1',

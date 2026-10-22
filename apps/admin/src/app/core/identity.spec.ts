@@ -9,9 +9,10 @@ import {
   UrlTree,
 } from '@angular/router';
 import { firstValueFrom, Observable } from 'rxjs';
-import { adminGuard, staffGuard } from './auth-guards';
+import { adminGuard, operationsGuard, staffGuard } from './auth-guards';
 import { authHttp } from './auth-http';
 import { Identity, Session } from './identity';
+import { pendingTripAction, savePendingTripAction } from './pending-trip-actions';
 
 const admin: Session = {
   user: {
@@ -83,6 +84,13 @@ describe('Identidad y protección del panel', () => {
   });
   it('un 401 borra identidad y redirige al acceso sin convertir el error en éxito', () => {
     identity.session.set(admin);
+    savePendingTripAction({
+      actorId: admin.user.id,
+      tripId: 'trip-1',
+      operation: 'cancel',
+      reason: 'Solicitud del cliente',
+      idempotencyKey: '7c3c3edb-a575-4d7b-a6ae-b42c32f1e1d6',
+    });
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const failure = vi.fn();
     client.get('/api/v1/admin/users').subscribe({ error: failure });
@@ -90,6 +98,7 @@ describe('Identidad y protección del panel', () => {
       .expectOne('/api/v1/admin/users')
       .flush({ message: 'Session expired' }, { status: 401, statusText: 'Unauthorized' });
     expect(identity.user()).toBe(null);
+    expect(pendingTripAction(admin.user.id, 'trip-1', 'cancel')).toBeNull();
     expect(failure).toHaveBeenCalledOnce();
     expect(navigate).toHaveBeenCalledWith(['/login'], {
       queryParams: { expired: '1', returnUrl: '/' },
@@ -132,9 +141,9 @@ describe('Identidad y protección del panel', () => {
     expect(identity.user()).toBe(null);
     expect(navigate).not.toHaveBeenCalled();
   });
-  async function guard(kind: 'staff' | 'admin') {
+  async function guard(kind: 'staff' | 'admin' | 'operations') {
     const result = TestBed.runInInjectionContext(() =>
-      (kind === 'staff' ? staffGuard : adminGuard)(
+      (kind === 'staff' ? staffGuard : kind === 'operations' ? operationsGuard : adminGuard)(
         {} as ActivatedRouteSnapshot,
         { url: '/conductores' } as RouterStateSnapshot,
       ),
@@ -160,5 +169,16 @@ describe('Identidad y protección del panel', () => {
     expect(router.serializeUrl((await guard('staff')) as UrlTree)).toBe('/sin-permiso');
     identity.session.set({ ...admin, user: { ...admin.user, status: 'suspended' } });
     expect(router.serializeUrl((await guard('admin')) as UrlTree)).toBe('/sin-permiso');
+  });
+  it('reserva la operación de viajes al administrador y al operador con sesión del personal', async () => {
+    identity.restored.set(true);
+    for (const role of ['admin', 'operator'] as const) {
+      identity.session.set({ ...admin, user: { ...admin.user, roles: [role] } });
+      expect(await guard('operations')).toBe(true);
+    }
+    identity.session.set({ ...admin, user: { ...admin.user, roles: ['finance'] } });
+    expect(router.serializeUrl((await guard('operations')) as UrlTree)).toBe('/sin-permiso');
+    identity.session.set({ ...admin, csrfToken: undefined });
+    expect(router.serializeUrl((await guard('operations')) as UrlTree)).toBe('/sin-permiso');
   });
 });

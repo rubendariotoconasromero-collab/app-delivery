@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:mobile_core/mobile_core.dart';
 import 'fixtures.dart';
+import 'trip_fixtures.dart';
 
 void main() {
   testWidgets(
@@ -39,6 +40,31 @@ void main() {
               }),
               200,
             );
+          }
+          if (request.url.path.endsWith('/config')) {
+            return utf8Response(
+              jsonEncode(tripConfig()..['enabled'] = false),
+              200,
+            );
+          }
+          if (request.url.path.endsWith('/me')) {
+            return utf8Response(
+              jsonEncode({
+                'user': userJson,
+                'expiresAt': DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .toUtc()
+                    .toIso8601String(),
+                'restricted': false,
+              }),
+              200,
+            );
+          }
+          if (request.url.path.endsWith('/active')) {
+            return utf8Response('{"trip":null}', 200);
+          }
+          if (request.url.path.endsWith('/trips')) {
+            return utf8Response('{"items":[]}', 200);
           }
           expect(request.url.path.endsWith('/logout'), true);
           expect(request.headers['authorization'], 'Bearer token');

@@ -1,0 +1,116 @@
+<main class="page">
+  <p class="eyebrow">OPERACIÓN / PASAJEROS</p>
+  <h1>Viajes de pasajeros</h1>
+  <p class="muted">
+    Revisa solicitudes, propone un conductor y consulta el avance y el efectivo declarado.
+  </p>
+  <p class="notice">Entorno de prueba · Cotizaciones en Bs con tarifas de desarrollo.</p>
+  <div class="toolbar">
+    <label for="trip-filter">Estado del viaje</label>
+    <select
+      id="trip-filter"
+      [ngModel]="state()"
+      (ngModelChange)="filter($event)"
+      [disabled]="loading()"
+    >
+      <option value="">Todos</option>
+      @for (entry of states; track entry[0]) {
+        <option [value]="entry[0]">{{ entry[1] }}</option>
+      }
+    </select>
+    <button type="button" (click)="load()" [disabled]="loading()">
+      {{ loading() ? 'Consultando…' : 'Actualizar' }}
+    </button>
+  </div>
+  @if (checkedAt(); as checkedAt) {
+    <p class="muted poll-note">
+      Consulta: {{ checkedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }} · Bolivia. Actualización
+      cada 15 segundos mientras esta página está visible.
+    </p>
+  }
+  @if (error()) {
+    <p class="error-message" role="alert">
+      {{ error() }} Los datos anteriores pueden haber cambiado.
+    </p>
+  }
+  <div class="table-wrap" [attr.aria-busy]="loading()">
+    <table>
+      <caption class="sr-only">
+        Viajes por estado
+      </caption>
+      <thead>
+        <tr>
+          <th>Solicitud y cliente</th>
+          <th>Recorrido</th>
+          <th>Estado</th>
+          <th>Conductor</th>
+          <th>Importe y efectivo</th>
+          <th>Operación</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (trip of trips(); track trip.id) {
+          <tr>
+            <td>
+              <strong>{{ trip.client.displayName }}</strong
+              ><small>{{ trip.createdAt | date: 'dd/MM/yyyy HH:mm' : '-0400' }}</small
+              ><small>{{ trip.passengerCount }} pasajero(s)</small>
+            </td>
+            <td>
+              <strong>O:</strong> {{ trip.origin.address }}<br /><strong>D:</strong>
+              {{ trip.destination.address
+              }}<small
+                >{{ trip.route.distanceMeters / 1000 | number: '1.1-1' }} km ·
+                {{ trip.route.durationSeconds / 60 | number: '1.0-0' }} min estimados</small
+              >
+            </td>
+            <td>
+              <span class="status-badge" [attr.data-status]="trip.state">{{
+                names[trip.state]
+              }}</span>
+              @if (trip.offer?.state === 'pending') {
+                <small>Propuesta pendiente de aceptación</small>
+              }
+            </td>
+            <td>
+              @if (trip.driver; as driver) {
+                {{ driver.displayName }}<small>{{ driver.vehicle.plate }}</small>
+              } @else {
+                Sin asignar
+              }
+            </td>
+            <td>
+              <strong>{{ money(trip.totalCents) }}</strong
+              ><small>{{ cashNames[trip.cash.status] }}</small>
+            </td>
+            <td><a class="record-link" [routerLink]="['/viajes', trip.id]">Ver viaje →</a></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              {{
+                loading()
+                  ? 'Cargando viajes…'
+                  : error()
+                    ? 'No se pudo obtener el listado.'
+                    : 'No hay viajes con este filtro.'
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button type="button" (click)="page(-1)" [disabled]="loading() || offset() === 0">
+      Anterior</button
+    ><span>Página {{ offset() / 50 + 1 }} · {{ total() }} viaje(s)</span
+    ><button
+      type="button"
+      (click)="page(1)"
+      [disabled]="loading() || offset() + trips().length >= total()"
+    >
+      Siguiente
+    </button>
+  </div>
+</main>

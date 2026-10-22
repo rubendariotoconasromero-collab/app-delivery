@@ -12,10 +12,11 @@ import 'auth_models.dart';
 enum ApiFailureKind { network, timeout, server, invalidResponse, unauthorized }
 
 class ApiFailure implements Exception {
-  const ApiFailure(this.kind, this.message);
+  const ApiFailure(this.kind, this.message, {this.statusCode});
 
   final ApiFailureKind kind;
   final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;
@@ -159,6 +160,7 @@ class ApiClient {
       throw const ApiFailure(
         ApiFailureKind.unauthorized,
         'Tu sesión venció. Inicia sesión nuevamente.',
+        statusCode: 401,
       );
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -176,7 +178,11 @@ class ApiClient {
           /* keep safe default */
         }
       }
-      throw ApiFailure(ApiFailureKind.server, message);
+      throw ApiFailure(
+        ApiFailureKind.server,
+        message,
+        statusCode: response.statusCode,
+      );
     }
     if (response.statusCode == 204) return <String, dynamic>{};
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));

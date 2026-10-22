@@ -19,6 +19,7 @@ class SessionController extends ChangeNotifier {
   final SessionStore store;
   final String role;
   AppUser? user;
+  bool restricted = false;
   bool restoring = true;
   String? message;
   Timer? _expiry;
@@ -36,8 +37,9 @@ class SessionController extends ChangeNotifier {
         final me = await api.me();
         final restored = AppUser.fromJson(me['user'] as Json);
         final expiresAt = DateTime.parse(me['expiresAt'] as String);
-        _validate(restored, expiresAt);
+        _validate(restored, expiresAt, existingSession: true);
         user = restored;
+        restricted = me['restricted'] == true;
         _schedule(expiresAt);
       } else if (saved != null) {
         await store.clear();
@@ -61,8 +63,13 @@ class SessionController extends ChangeNotifier {
     }
   }
 
-  void _validate(AppUser candidate, DateTime expiresAt) {
-    if (candidate.status != 'active' ||
+  void _validate(
+    AppUser candidate,
+    DateTime expiresAt, {
+    bool existingSession = false,
+  }) {
+    if (!(candidate.status == 'active' ||
+            (existingSession && candidate.status == 'suspended')) ||
         !candidate.roles.contains(role) ||
         !expiresAt.isAfter(DateTime.now())) {
       throw const ApiFailure(
@@ -90,6 +97,7 @@ class SessionController extends ChangeNotifier {
     }
     api.accessToken = session.accessToken;
     user = session.user;
+    restricted = false;
     message = null;
     _schedule(session.expiresAt);
     _changed();

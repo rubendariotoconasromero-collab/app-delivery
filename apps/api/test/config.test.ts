@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import test from 'node:test';
 import { parseEnvironment } from '../src/config/environment';
 
@@ -18,6 +19,29 @@ test('configuration supplies the confirmed market and parses explicit CORS origi
   assert.equal(values.MARKET_CITY, 'Santa Cruz de la Sierra');
   assert.equal(values.MARKET_CURRENCY, 'BOB');
   assert.deepEqual(values.CORS_ORIGINS, ['http://localhost:4200', 'https://admin.example.com']);
+});
+
+test('test fares require an explicit development switch and cannot run in production', () => {
+  assert.equal(parseEnvironment(required).TRIP_DEVELOPMENT_ENABLED, false);
+  assert.throws(
+    () =>
+      parseEnvironment({
+        ...required,
+        NODE_ENV: 'production',
+        AUTH_SECRET: randomBytes(32).toString('base64url'),
+        AUTH_OTP_DELIVERY: 'disabled',
+        TRIP_DEVELOPMENT_ENABLED: 'true',
+      }),
+    /TRIP_DEVELOPMENT_ENABLED/,
+  );
+  assert.throws(
+    () => parseEnvironment({ ...required, TRIP_COVERAGE_SOUTH: '-17', TRIP_COVERAGE_NORTH: '-18' }),
+    /TRIP_COVERAGE/,
+  );
+  assert.throws(
+    () => parseEnvironment({ ...required, TRIP_PER_KM_CENTS: '-1' }),
+    /TRIP_PER_KM_CENTS/,
+  );
 });
 
 test('invalid configuration is rejected without revealing credential values', () => {

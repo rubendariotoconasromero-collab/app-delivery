@@ -26,7 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { z } from 'zod';
 import { AppConfig } from '../config/app-config';
-import { CurrentUser, Public, Roles } from './auth.decorators';
+import { CurrentUser, Public, Roles, ExistingTripAccess } from './auth.decorators';
 import { AuthRequest } from './auth.guard';
 import { AuthService } from './auth.service';
 import { AuthenticatedUser } from './auth.types';
@@ -154,11 +154,13 @@ export class AuthController {
       },
     },
   })
+  @ExistingTripAccess()
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.auth.sessionInfo(user);
   }
 
   @Post('logout')
+  @ExistingTripAccess()
   @Header('Cache-Control', 'no-store')
   @HttpCode(204)
   @ApiBearerAuth()

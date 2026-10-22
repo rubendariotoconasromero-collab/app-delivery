@@ -27,6 +27,11 @@ for (const [source, target] of [
   if (!/^AUTH_OTP_DELIVERY=/m.test(content)) content += '\nAUTH_OTP_DELIVERY=development\n';
   if (!/^UPLOAD_DIR=/m.test(content))
     content += `UPLOAD_DIR=.cache/${target === '.env.test' ? 'test-' : ''}uploads\n`;
+  const template = await readFile(new URL(source, root), 'utf8');
+  for (const line of template.split(/\r?\n/)) {
+    const key = line.match(/^(TRIP_[A-Z_]+)=/m)?.[1];
+    if (key && !new RegExp(`^${key}=`, 'm').test(content)) content += `${line}\n`;
+  }
   await writeFile(destination, content, { mode: 0o600 });
 }
 console.log('AUTH_SECRET generado donde faltaba; las credenciales existentes se conservan.');

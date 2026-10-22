@@ -142,6 +142,35 @@ void main() {
     },
   );
 
+  test(
+    'existing suspended session restores in restricted mode to finish its trip',
+    () async {
+      final api = clientFor(
+        (request) async => utf8Response(
+          jsonEncode({
+            'user': {...userJson, 'status': 'suspended'},
+            'expiresAt': future,
+            'restricted': true,
+          }),
+          200,
+        ),
+      );
+      final store = FakeSessionStore()
+        ..saved = StoredSession('existing-token', DateTime.parse(future));
+      final controller = SessionController(
+        api: api,
+        store: store,
+        role: 'driver',
+      );
+      addTearDown(controller.dispose);
+      await controller.restore();
+      expect(controller.user?.status, 'suspended');
+      expect(controller.restricted, true);
+      expect(api.accessToken, 'existing-token');
+      expect(store.clears, 0);
+    },
+  );
+
   test('sesión vencida no consulta servidor ni restaura identidad', () async {
     final api = clientFor((_) async => throw StateError('No debe consultar'));
     final store = FakeSessionStore()

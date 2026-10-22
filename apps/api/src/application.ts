@@ -11,9 +11,9 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
     new DocumentBuilder()
       .setTitle('AppDelivery API')
       .setDescription(
-        'Loop 2: phone identity, staff MFA sessions, permissions and driver onboarding.',
+        'Loop 3: passenger quotes, manual dispatch, verified journey milestones and cash declarations.',
       )
-      .setVersion('0.2.0')
+      .setVersion('0.3.0')
       .addBearerAuth({ type: 'http', scheme: 'bearer', description: 'Opaque mobile session token' })
       .addCookieAuth('appdelivery_admin')
       .build(),

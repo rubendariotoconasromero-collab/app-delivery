@@ -19,6 +19,7 @@ export interface AuthenticatedUser extends PublicUser {
   sessionKind: 'mobile' | 'admin';
   sessionExpiresAt: Date;
   mfaVerified: boolean;
+  restricted?: boolean;
 }
 
 export interface OtpRequest {

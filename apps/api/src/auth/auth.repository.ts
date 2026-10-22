@@ -35,6 +35,12 @@ function userFromRow(row: UserRow): PublicUser {
 const userColumns = `u.id,u.display_name,u.phone,u.email,u.status,
   ARRAY(SELECT role FROM app_user_roles WHERE user_id=u.id ORDER BY role) AS roles`;
 
+const existingWork = `EXISTS(SELECT 1 FROM passenger_trips t WHERE
+  (t.client_id=u.id AND t.state IN ('searching','assigned','arrived','in_progress')) OR
+  (t.driver_id=u.id AND (t.state IN ('assigned','arrived','in_progress') OR
+    (t.state='completed' AND t.completed_at > NOW()-INTERVAL '24 hours' AND NOT EXISTS(
+      SELECT 1 FROM passenger_cash_declarations c WHERE c.trip_id=t.id)))))`;
+
 export type OtpCompletion = { user: PublicUser } | { error: 'invalid' | 'account' };
 
 @Injectable()
@@ -213,19 +219,22 @@ export class AuthRepository implements OnModuleDestroy {
     );
   }
 
-  async sessionByHash(hash: string): Promise<AuthenticatedUser | null> {
+  async sessionByHash(hash: string, allowExistingTrip = false): Promise<AuthenticatedUser | null> {
     const found = await this.pool.query<
       UserRow & {
         session_id: string;
         kind: 'mobile' | 'admin';
         expires_at: Date;
         mfa_verified: boolean;
+        restricted: boolean;
       }
     >(
-      `SELECT ${userColumns},s.id AS session_id,s.kind,s.expires_at,s.mfa_verified
+      `SELECT ${userColumns},s.id AS session_id,s.kind,s.expires_at,s.mfa_verified,s.restricted
        FROM auth_sessions s JOIN app_users u ON u.id=s.user_id
-       WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>NOW() AND u.status='active'`,
-      [hash],
+       WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>NOW() AND
+         ((u.status='active' AND NOT s.restricted) OR
+          ($2::boolean AND s.kind='mobile' AND s.restricted AND ${existingWork}))`,
+      [hash, allowExistingTrip],
     );
     const row = found.rows[0];
     return row
@@ -235,12 +244,28 @@ export class AuthRepository implements OnModuleDestroy {
           sessionKind: row.kind,
           sessionExpiresAt: row.expires_at,
           mfaVerified: row.mfa_verified,
+          restricted: row.restricted,
         }
       : null;
   }
 
   async revokeSession(id: string): Promise<void> {
-    await this.pool.query('UPDATE auth_sessions SET revoked_at=NOW() WHERE id=$1', [id]);
+    await this.transaction(async (client) => {
+      const session = (
+        await client.query<{ user_id: string; kind: string }>(
+          'SELECT user_id,kind FROM auth_sessions WHERE id=$1',
+          [id],
+        )
+      ).rows[0];
+      if (!session) return;
+      await client.query('SELECT id FROM app_users WHERE id=$1 FOR UPDATE', [session.user_id]);
+      await client.query('UPDATE auth_sessions SET revoked_at=NOW() WHERE id=$1', [id]);
+      if (session.kind === 'mobile')
+        await client.query(
+          'UPDATE driver_presence SET available=FALSE,updated_at=NOW() WHERE driver_id=$1',
+          [session.user_id],
+        );
+    });
   }
 
   async credentialsByEmail(email: string): Promise<AdminCredentials | null> {
@@ -320,6 +345,22 @@ export class AuthRepository implements OnModuleDestroy {
         );
       const status = change.status ?? previous.status;
       const roles = change.roles ?? previous.roles;
+      const work = await client.query(
+        `SELECT ${existingWork} AS existing FROM app_users u WHERE u.id=$1`,
+        [id],
+      );
+      const hasExistingWork = work.rows[0]?.existing === true;
+      if (
+        hasExistingWork &&
+        change.roles &&
+        ['client', 'driver'].some(
+          (role) => previous.roles.includes(role as UserRole) && !roles.includes(role as UserRole),
+        )
+      ) {
+        throw new ConflictException(
+          'Resuelve el servicio o su cobro pendiente antes de retirar el rol móvil.',
+        );
+      }
       if (
         previous.status === 'active' &&
         previous.roles.includes('admin') &&
@@ -342,10 +383,20 @@ export class AuthRepository implements OnModuleDestroy {
         for (const role of roles)
           await client.query('INSERT INTO app_user_roles(user_id,role) VALUES($1,$2)', [id, role]);
       }
-      // Suspended sessions cannot become usable again after reactivation.
+      // Existing mobile work has a narrowly scoped continuation; administrative
+      // sessions and idle mobile sessions are revoked. Reactivation never expands
+      // a credential that was restricted during suspension.
       if (status === 'suspended')
         await client.query(
-          'UPDATE auth_sessions SET revoked_at=NOW() WHERE user_id=$1 AND revoked_at IS NULL',
+          `UPDATE auth_sessions SET
+            revoked_at=CASE WHEN kind='mobile' AND $2::boolean THEN NULL ELSE NOW() END,
+            restricted=CASE WHEN kind='mobile' AND $2::boolean THEN TRUE ELSE restricted END
+            WHERE user_id=$1 AND revoked_at IS NULL`,
+          [id, hasExistingWork],
+        );
+      if (status === 'suspended')
+        await client.query(
+          'UPDATE driver_presence SET available=FALSE,updated_at=NOW() WHERE driver_id=$1',
           [id],
         );
       await client.query(

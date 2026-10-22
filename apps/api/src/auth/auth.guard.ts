@@ -9,7 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AppConfig } from '../config/app-config';
 import { safeEqual } from './auth.crypto';
-import { PUBLIC_ROUTE, REQUIRED_ROLES } from './auth.decorators';
+import { EXISTING_TRIP_ACCESS, PUBLIC_ROUTE, REQUIRED_ROLES } from './auth.decorators';
 import { AuthService } from './auth.service';
 import { AuthenticatedUser, STAFF_ROLES, UserRole } from './auth.types';
 
@@ -61,9 +61,18 @@ export class AuthGuard implements CanActivate {
       if (matches.length === 1) token = matches[0]!.slice(name.length + 1);
     }
     if (!token) throw new UnauthorizedException('Inicia sesión para continuar.');
-    const user = await this.auth.authenticate(token);
+    const existingTrip =
+      this.reflector.getAllAndOverride<boolean>(EXISTING_TRIP_ACCESS, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true;
+    const user = await this.auth.authenticate(token, true);
     if (user.sessionKind !== source || (source === 'admin' && !user.mfaVerified))
       throw new UnauthorizedException('Tipo de sesión inválido.');
+    if (user.restricted && !existingTrip)
+      throw new ForbiddenException(
+        'La cuenta tiene acceso limitado al servicio existente. Inicia una nueva sesión después de su reactivación.',
+      );
     if (source === 'admin' && !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
       const csrf = header(request, 'x-csrf-token');
       if (!csrf || !safeEqual(this.auth.csrf(user), csrf))

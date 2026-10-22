@@ -383,6 +383,92 @@ td button {
   background: #fff3d9;
   color: #775515;
 }
+.status-badge[data-status='searching'],
+.status-badge[data-status='partial'] {
+  background: #fff3d9;
+  color: #775515;
+}
+.status-badge[data-status='assigned'],
+.status-badge[data-status='arrived'],
+.status-badge[data-status='in_progress'] {
+  background: #e6f0f6;
+  color: #28577a;
+}
+.status-badge[data-status='completed'],
+.status-badge[data-status='declared_paid'] {
+  background: #e9f4e5;
+  color: #315d32;
+}
+.status-badge[data-status='cancelled'],
+.status-badge[data-status='no_driver'],
+.status-badge[data-status='unpaid'] {
+  background: #fae7e2;
+  color: #963f2d;
+}
+.poll-note {
+  font-size: 11px;
+}
+.trip-identifier {
+  overflow-wrap: anywhere;
+}
+.trip-points {
+  display: grid;
+  gap: 22px;
+  margin: 24px 0;
+}
+.trip-points > div {
+  display: flex;
+  gap: 14px;
+  align-items: start;
+}
+.trip-points p {
+  margin: 5px 0;
+}
+.trip-points small {
+  font-size: 11px;
+  color: #6c7c76;
+}
+.point-label {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: white;
+  background: #19533e;
+  font-size: 12px;
+  font-weight: 700;
+}
+.point-label.destination {
+  background: #9c5931;
+}
+.offer-note {
+  background: #fff6e4;
+  padding: 17px;
+  border-radius: 7px;
+  margin: 18px 0;
+}
+.offer-note p {
+  margin-bottom: 0;
+}
+.trip-timeline {
+  list-style: none;
+  padding: 0;
+}
+.trip-timeline li {
+  padding: 14px 0 14px 20px;
+  border-left: 3px solid #669578;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.trip-timeline li.unconfirmed {
+  border-left-color: #dce4df;
+  color: #768179;
+}
 .status-badge[data-status='approved'],
 .status-badge[data-status='active'] {
   background: #e9f4e5;

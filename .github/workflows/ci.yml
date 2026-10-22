@@ -65,7 +65,7 @@ jobs:
           npm run db:migrate
           npm run db:status
           npm run infra:verify
-      - name: Verify authentication and driver approval against PostgreSQL
+      - name: Verify identity, driver approval and passenger journeys against PostgreSQL
         env:
           RUN_DB_INTEGRATION: 'true'
         run: npm run test --workspace @appdelivery/api
@@ -134,6 +134,8 @@ jobs:
           cache: true
       - name: Compile unsigned iOS application
         working-directory: apps/${{ matrix.app }}
+        env:
+          BYPASS_PERMISSION_LOCATION_ALWAYS: '1'
         run: |
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://api.example.invalid/api/v1

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, staffGuard } from './core/auth-guards';
+import { adminGuard, operationsGuard, staffGuard } from './core/auth-guards';
 
 export const routes: Routes = [
   {
@@ -23,6 +23,18 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./home/home').then((module) => module.Home),
         title: 'Inicio · AppDelivery Admin',
+      },
+      {
+        path: 'viajes',
+        canActivate: [operationsGuard],
+        loadComponent: () => import('./trips/trip-list').then((module) => module.TripList),
+        title: 'Viajes de pasajeros · AppDelivery Admin',
+      },
+      {
+        path: 'viajes/:id',
+        canActivate: [operationsGuard],
+        loadComponent: () => import('./trips/trip-detail').then((module) => module.TripDetail),
+        title: 'Detalle del viaje · AppDelivery Admin',
       },
       {
         path: 'conductores',

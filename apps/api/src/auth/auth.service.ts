@@ -126,11 +126,13 @@ export class AuthService {
     };
   }
 
-  async authenticate(token: string): Promise<AuthenticatedUser> {
+  async authenticate(token: string, existingTrip = false): Promise<AuthenticatedUser> {
     this.secret();
     if (!/^[A-Za-z0-9_-]{43}$/.test(token))
       throw new UnauthorizedException('Sesión inválida o vencida.');
-    const user = await this.persistent(() => this.repository.sessionByHash(tokenHash(token)));
+    const user = await this.persistent(() =>
+      this.repository.sessionByHash(tokenHash(token), existingTrip),
+    );
     if (!user) throw new UnauthorizedException('Sesión inválida o vencida.');
     return user;
   }
@@ -139,6 +141,7 @@ export class AuthService {
     return {
       user: publicUser(user),
       expiresAt: user.sessionExpiresAt.toISOString(),
+      restricted: user.restricted ?? false,
       ...(user.sessionKind === 'admin' ? { csrfToken: this.csrf(user) } : {}),
     };
   }

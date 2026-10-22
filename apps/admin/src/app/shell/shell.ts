@@ -20,6 +20,11 @@ import { apiError, Identity, roleNames } from '../core/identity';
             ariaCurrentWhenActive="page"
             >Inicio y diagnóstico</a
           >
+          @if (identity.operations()) {
+            <a routerLink="/viajes" routerLinkActive="selected" ariaCurrentWhenActive="page"
+              >Viajes de pasajeros</a
+            >
+          }
           @if (identity.admin()) {
             <a routerLink="/conductores" routerLinkActive="selected" ariaCurrentWhenActive="page"
               >Conductores y vehículos</a
@@ -30,7 +35,7 @@ import { apiError, Identity, roleNames } from '../core/identity';
           }
         </nav>
         <div class="sidebar-foot">
-          Santa Cruz de la Sierra<small>Bolivia · BOB · Loop 02</small>
+          Santa Cruz de la Sierra<small>Bolivia · BOB · Loop 03</small>
         </div>
       </aside>
       <div class="admin-main">

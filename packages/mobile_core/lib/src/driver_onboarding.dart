@@ -169,7 +169,7 @@ class _DriverOnboardingState extends State<DriverOnboarding> {
                         : 'Aún no tienes habilitación operativa completa.',
                   ),
                   const Text(
-                    'La recepción de servicios se incorporará en el siguiente loop.',
+                    'Cuando estés habilitado, activa tu disponibilidad en Tus viajes para recibir una asignación.',
                   ),
                 ],
               ),

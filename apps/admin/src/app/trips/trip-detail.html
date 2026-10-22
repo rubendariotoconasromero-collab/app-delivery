@@ -1,0 +1,381 @@
+<main class="page">
+  <a class="back-link" routerLink="/viajes">← Volver a viajes</a>
+  <div class="card-heading">
+    <div>
+      <p class="eyebrow">OPERACIÓN / PASAJEROS</p>
+      <h1>Detalle del viaje</h1>
+    </div>
+    <button type="button" (click)="refresh()" [disabled]="loading() || busy()">
+      {{ loading() ? 'Consultando…' : 'Actualizar' }}
+    </button>
+  </div>
+  <p class="notice">
+    Servicio de prueba · Tarifa en bolivianos · El efectivo se declara por separado del cierre del
+    viaje.
+  </p>
+  @if (checkedAt(); as checkedAt) {
+    <p class="muted poll-note">
+      Consulta: {{ checkedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }} · Bolivia. Actualización
+      cada 15 segundos mientras esta página está visible.
+    </p>
+  }
+  @if (error()) {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="success-message" role="status">{{ success() }}</p>
+  }
+  @if (loading() && !detail()) {
+    <p role="status">Cargando viaje…</p>
+  }
+  @if (detail(); as data) {
+    <section class="card">
+      <div class="card-heading">
+        <h2>Estado del servicio</h2>
+        <span class="status-badge" [attr.data-status]="data.trip.state">{{
+          names[data.trip.state]
+        }}</span>
+      </div>
+      <p class="muted trip-identifier">{{ data.trip.id }}</p>
+      <div class="facts">
+        <div>
+          <small>CLIENTE</small><strong>{{ data.trip.client.displayName }}</strong>
+          @if (data.trip.client.phone) {
+            <p>{{ data.trip.client.phone }}</p>
+          }
+        </div>
+        <div>
+          <small>PASAJEROS</small><strong>{{ data.trip.passengerCount }}</strong>
+        </div>
+        <div>
+          <small>PRECIO CONTRATADO</small><strong>{{ money(data.trip.totalCents) }}</strong>
+        </div>
+        <div>
+          <small>TARIFA</small><strong>{{ data.trip.tariffVersion }}</strong>
+          <p>Desarrollo</p>
+        </div>
+      </div>
+      @if (data.trip.driver; as driver) {
+        <p>
+          <strong>Conductor:</strong> {{ driver.displayName }}
+          @if (driver.phone) {
+            · {{ driver.phone }}
+          }
+        </p>
+        <p>
+          <strong>Vehículo:</strong> {{ driver.vehicle.plate }} · {{ driver.vehicle.make }}
+          {{ driver.vehicle.model }} · {{ driver.vehicle.capacityPassengers }} plazas
+        </p>
+      } @else {
+        <p>Conductor aún sin asignar.</p>
+      }
+      @if (data.trip.offer; as offer) {
+        <div class="offer-note" [attr.data-status]="offer.state">
+          <strong>Propuesta al conductor: {{ offerNames[offer.state] }}</strong>
+          <p>
+            Vencimiento: {{ offer.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }} · Bolivia
+          </p>
+          @if (offer.state === 'pending') {
+            <p>
+              La propuesta reserva al candidato hasta que responda o venza. El viaje continúa
+              buscando hasta su aceptación.
+            </p>
+          }
+        </div>
+      }
+      @if (data.trip.state === 'searching') {
+        <p class="muted">
+          Búsqueda hasta {{ data.trip.searchExpiresAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }} ·
+          Bolivia. Los plazos se validan en el servidor.
+        </p>
+      }
+    </section>
+
+    <section class="card">
+      <h2>Origen y destino</h2>
+      <div class="trip-points">
+        <div>
+          <span class="point-label">O</span>
+          <div>
+            <strong>{{ data.trip.origin.address }}</strong>
+            @if (data.trip.origin.reference) {
+              <p>{{ data.trip.origin.reference }}</p>
+            }
+            <small>{{ data.trip.origin.latitude }}, {{ data.trip.origin.longitude }}</small>
+          </div>
+        </div>
+        <div>
+          <span class="point-label destination">D</span>
+          <div>
+            <strong>{{ data.trip.destination.address }}</strong>
+            @if (data.trip.destination.reference) {
+              <p>{{ data.trip.destination.reference }}</p>
+            }
+            <small
+              >{{ data.trip.destination.latitude }}, {{ data.trip.destination.longitude }}</small
+            >
+          </div>
+        </div>
+      </div>
+      <p>
+        {{ data.trip.route.distanceMeters / 1000 | number: '1.1-1' }} km ·
+        {{ data.trip.route.durationSeconds / 60 | number: '1.0-0' }} min estimados en la cotización
+      </p>
+      @if (config(); as config) {
+        <app-route-map
+          [origin]="{ lat: data.trip.origin.latitude, lng: data.trip.origin.longitude }"
+          [destination]="{
+            lat: data.trip.destination.latitude,
+            lng: data.trip.destination.longitude,
+          }"
+          [coordinates]="data.trip.route.geometry.coordinates"
+          [tileTemplate]="config.map.tileUrl"
+          [attribution]="config.map.attribution"
+          [attributionUrl]="config.map.attributionUrl"
+        />
+      }
+      @if (configError()) {
+        <p class="error-message" role="alert">
+          No se pudo obtener la configuración del mapa. {{ configError() }}
+        </p>
+      }
+    </section>
+
+    @if (canAssign()) {
+      <section class="card review-box" aria-labelledby="assignment-title">
+        <h2 id="assignment-title">Proponer conductor</h2>
+        <p>
+          Se muestran hasta 50 conductores habilitados, disponibles, con vehículo compatible y
+          ubicación reciente. La asignación requiere que el conductor acepte.
+        </p>
+        <button
+          type="button"
+          (click)="loadCandidates()"
+          [disabled]="candidatesLoading() || busy() || pendingAssignment()"
+        >
+          {{ candidatesLoading() ? 'Buscando…' : 'Consultar conductores disponibles' }}
+        </button>
+        @if (candidatesError()) {
+          <p class="error-message" role="alert">{{ candidatesError() }}</p>
+        }
+        @if (pendingAssignment()) {
+          <p class="notice">
+            La propuesta quedó pendiente de verificar. Reintenta con el mismo conductor y motivo
+            para recuperar el resultado del servidor.
+          </p>
+        }
+        @if (candidatesChecked() && candidates().length === 0) {
+          <p class="empty">
+            No hay conductores disponibles compatibles. Actualiza la consulta cuando un conductor se
+            conecte con GPS vigente.
+          </p>
+        }
+        @if (candidates().length > 0 || pendingAssignment()) {
+          <form (ngSubmit)="assign()">
+            <label for="trip-driver">Conductor y vehículo</label>
+            <select
+              id="trip-driver"
+              name="driverId"
+              [(ngModel)]="driverId"
+              [disabled]="busy() || pendingAssignment()"
+              required
+            >
+              <option value="">Selecciona un conductor</option>
+              @if (pendingAssignment()) {
+                <option [value]="driverId">Conductor del intento pendiente · {{ driverId }}</option>
+              }
+              @for (candidate of candidates(); track candidate.driverId) {
+                <option [value]="candidate.driverId">
+                  {{ candidate.displayName }} · {{ candidate.vehicle.plate }} ·
+                  {{ candidate.vehicle.capacityPassengers }} plazas ·
+                  {{ candidate.distanceMeters / 1000 | number: '1.1-1' }} km del origen
+                </option>
+              }
+            </select>
+            @for (candidate of candidates(); track candidate.driverId) {
+              @if (candidate.driverId === driverId) {
+                <p class="muted">
+                  {{ candidate.vehicle.make }} {{ candidate.vehicle.model }} · GPS:
+                  {{ candidate.location.capturedAt | date: 'HH:mm:ss' : '-0400' }} · Precisión
+                  {{ candidate.location.accuracyMeters | number: '1.0-0' }} m. La distancia al
+                  origen es aproximada.
+                </p>
+              }
+            }
+            <label for="assignment-reason">Motivo de la asignación manual</label>
+            <textarea
+              id="assignment-reason"
+              name="assignmentReason"
+              [(ngModel)]="assignmentReason"
+              [disabled]="busy() || pendingAssignment()"
+              rows="3"
+              minlength="3"
+              maxlength="1000"
+              required
+              placeholder="Motivo para el historial operativo"
+            ></textarea>
+            <div class="actions">
+              <button
+                class="primary"
+                type="submit"
+                [disabled]="busy() || loading() || !driverId || assignmentReason.trim().length < 3"
+              >
+                {{
+                  busy()
+                    ? 'Enviando…'
+                    : pendingAssignment()
+                      ? 'Reintentar la misma propuesta'
+                      : 'Enviar propuesta al conductor'
+                }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    }
+
+    <section class="card" aria-labelledby="cash-title">
+      <div class="card-heading">
+        <h2 id="cash-title">Pago en efectivo</h2>
+        <span class="status-badge" [attr.data-status]="data.trip.cash.status">{{
+          cashNames[data.trip.cash.status]
+        }}</span>
+      </div>
+      <div class="facts">
+        <div>
+          <small>IMPORTE CONTRATADO</small><strong>{{ money(data.trip.totalCents) }}</strong>
+        </div>
+        <div>
+          <small>RECIBIDO SEGÚN EL CONDUCTOR</small
+          ><strong>{{
+            data.trip.cash.receivedCents === null
+              ? 'Sin declaración'
+              : money(data.trip.cash.receivedCents)
+          }}</strong>
+        </div>
+      </div>
+      @if (data.trip.cash.declaredAt) {
+        <p>
+          Declarado el {{ data.trip.cash.declaredAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }} ·
+          Bolivia
+        </p>
+        <p class="muted">Responsable: {{ data.trip.cash.declaredBy }}</p>
+      }
+      <p class="muted">
+        El conductor asignado registra el efectivo al finalizar desde su app. Cada declaración está
+        pendiente de conciliación; finalizar el viaje no confirma que el pago fue recibido.
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="progress-title">
+      <h2 id="progress-title">Hitos del viaje</h2>
+      <ol class="trip-timeline">
+        <li>
+          <strong>Solicitud</strong
+          ><span>{{ data.trip.createdAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }}</span>
+        </li>
+        <li [class.unconfirmed]="!data.trip.assignedAt">
+          <strong>Asignación aceptada</strong
+          ><span>{{
+            data.trip.assignedAt
+              ? (data.trip.assignedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400')
+              : 'Sin confirmar'
+          }}</span>
+        </li>
+        <li [class.unconfirmed]="!data.trip.arrivedAt">
+          <strong>Llegada al origen</strong
+          ><span>{{
+            data.trip.arrivedAt
+              ? (data.trip.arrivedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400')
+              : 'Sin confirmar'
+          }}</span>
+        </li>
+        <li [class.unconfirmed]="!data.trip.startedAt">
+          <strong>Inicio verificado por el pasajero</strong
+          ><span>{{
+            data.trip.startedAt
+              ? (data.trip.startedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400')
+              : 'Sin confirmar'
+          }}</span>
+        </li>
+        <li [class.unconfirmed]="!data.trip.completedAt">
+          <strong>Finalización</strong
+          ><span>{{
+            data.trip.completedAt
+              ? (data.trip.completedAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400')
+              : 'Sin confirmar'
+          }}</span>
+        </li>
+      </ol>
+      <p class="muted">Horarios de Bolivia (UTC−4).</p>
+    </section>
+
+    @if (canCancel()) {
+      <section class="card" aria-labelledby="cancel-title">
+        <h2 id="cancel-title">Cancelar antes del inicio</h2>
+        <p>El motivo queda en el historial. No se genera un cargo automático.</p>
+        @if (pendingCancellation()) {
+          <p class="notice">
+            La cancelación está pendiente de verificar. Reintenta para recuperar su resultado.
+          </p>
+        }
+        <form (ngSubmit)="cancel()">
+          <label for="cancellation-reason">Motivo de cancelación</label
+          ><textarea
+            id="cancellation-reason"
+            name="cancellationReason"
+            [(ngModel)]="cancellationReason"
+            rows="2"
+            minlength="3"
+            maxlength="1000"
+            [disabled]="busy() || pendingCancellation()"
+            required
+          ></textarea>
+          <div class="actions">
+            <button
+              class="danger"
+              type="submit"
+              [disabled]="busy() || loading() || cancellationReason.trim().length < 3"
+            >
+              {{
+                pendingCancellation()
+                  ? 'Reintentar la misma cancelación'
+                  : 'Confirmar cancelación del viaje'
+              }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="card" aria-labelledby="trip-audit-title">
+      <h2 id="trip-audit-title">Historial operativo</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha · Bolivia</th>
+              <th>Acción</th>
+              <th>Motivo</th>
+              <th>Responsable</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of data.audit; track entry.id) {
+              <tr>
+                <td>{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm:ss' : '-0400' }}</td>
+                <td>{{ actionNames[entry.action] ?? entry.action }}</td>
+                <td>{{ entry.reason || '—' }}</td>
+                <td>{{ entry.actorId || 'Sistema' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">Sin eventos registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>
